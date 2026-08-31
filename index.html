@@ -269,18 +269,18 @@
   const days = Array.from({ length: 30 }, (_, i) => `Aug ${i + 1}`);
 
   // Real data from Jay's food logs (KB entries Aug 1-30, 2026)
-  // Intake: midpoint of ranges where given
+  // Intake: actual or midpoint of ranges
   const intake = [
     3700, 2478, 1570, 1815, 3500, 1620, 1480, 2300, 2700, 1720,
     2300, 2090, 1965, 1995, 2075, 2250, 1435, 2553, 2200, 2200,
     2050, 3835, 2725, 2155, 2630, 1860, 2100, 2265, 2040, 2125
   ];
 
-  // Burned: baseline TDEE (~2,050 cal) + logged activity
+  // Burned: activity only (from KB logs)
   const burned = [
-    3976, 2966, 2050, 2483, 2050, 2050, 2050, 3475, 4725, 2050,
-    2450, 2450, 2450, 2450, 2750, 2575, 2050, 2050, 2950, 2950,
-    3025, 2970, 3100, 2050, 2050, 3768, 2125, 2050, 2730, 2533
+    1966, 966, 0, 433, 0, 0, 0, 1425, 2675, 0,
+    400, 400, 400, 400, 700, 525, 0, 0, 900, 900,
+    975, 920, 1050, 0, 0, 1718, 75, 0, 680, 483
   ];
 
   // Weight progression (130 lbs baseline, gradual natural variation)
