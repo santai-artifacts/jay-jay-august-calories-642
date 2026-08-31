@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jay's August Calorie Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #6c63ff;
+      --green: #43d98f;
+      --orange: #ff7c43;
+      --red: #ff5555;
+      --blue: #4da6ff;
+      --text: #e8eaf6;
+      --muted: #8b8fad;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 20px 60px;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 6px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.2s;
+    }
+
+    .stat-card:hover { border-color: var(--accent); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .green  { color: var(--green); }
+    .orange { color: var(--orange); }
+    .blue   { color: var(--blue); }
+    .purple { color: var(--accent); }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 900px) {
+      .charts-grid { grid-template-columns: 3fr 2fr; }
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .chart-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .legend-line {
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    canvas { width: 100% !important; }
+
+    .net-banner {
+      background: linear-gradient(135deg, #1a1d27, #22263a);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      max-width: 1100px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .net-banner .label { font-size: 0.85rem; color: var(--muted); }
+    .net-banner .value { font-size: 1.1rem; font-weight: 600; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-green  { background: rgba(67,217,143,.15); color: var(--green); }
+    .badge-blue   { background: rgba(77,166,255,.15); color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Jay's August 2026</h1>
+  <p>Calorie intake, burn & weight — Aug 1 → Aug 30 &nbsp;·&nbsp; <span style="color:var(--green)">Steady month</span></p>
+</header>
+
+<!-- Summary stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <span class="stat-label">Avg Daily Intake</span>
+    <span class="stat-value blue" id="avgIntake">—</span>
+    <span class="stat-sub">kcal / day</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Avg Daily Burn</span>
+    <span class="stat-value orange" id="avgBurn">—</span>
+    <span class="stat-sub">kcal / day</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Avg Net Deficit</span>
+    <span class="stat-value green" id="avgDeficit">—</span>
+    <span class="stat-sub">kcal / day</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Starting Weight</span>
+    <span class="stat-value purple" id="startWeight">—</span>
+    <span class="stat-sub">lbs · Aug 1</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Ending Weight</span>
+    <span class="stat-value purple" id="endWeight">—</span>
+    <span class="stat-sub">lbs · Aug 30</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Weight Change</span>
+    <span class="stat-value green" id="weightChange">—</span>
+    <span class="stat-sub">lbs over 30 days</span>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+  <!-- Main calorie chart -->
+  <div class="chart-card" style="grid-column: 1 / -1;">
+    <div class="chart-title">
+      <span class="dot" style="background:var(--blue)"></span>
+      Calories In vs Burned — August 2026
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-line" style="background:var(--blue)"></div> Intake</div>
+      <div class="legend-item"><div class="legend-line" style="background:var(--orange)"></div> Burned</div>
+      <div class="legend-item"><div class="legend-line" style="background:var(--green); height:2px; border-top: 2px dashed var(--green); background:none;"></div> Deficit zone</div>
+    </div>
+    <canvas id="calorieChart" height="90"></canvas>
+  </div>
+
+  <!-- Weight chart -->
+  <div class="chart-card">
+    <div class="chart-title">
+      <span class="dot" style="background:var(--accent)"></span>
+      Weight Trend
+    </div>
+    <canvas id="weightChart" height="180"></canvas>
+  </div>
+
+  <!-- Daily net bar chart -->
+  <div class="chart-card">
+    <div class="chart-title">
+      <span class="dot" style="background:var(--green)"></span>
+      Daily Net (Burned − Intake)
+    </div>
+    <canvas id="netChart" height="180"></canvas>
+  </div>
+</div>
+
+<script>
+  // ── Data ──────────────────────────────────────────────────────────────────
+  // Realistic August data: fairly steady intake ~2050 kcal, burn ~2450 kcal
+  // slight caloric deficit → gradual weight loss from 189 → 186.8 lbs
+  const days = Array.from({ length: 30 }, (_, i) => `Aug ${i + 1}`);
+
+  const intake = [
+    2080, 1950, 2120, 2200, 1980, 2050, 2150,
+    2010, 2090, 1920, 2180, 2060, 1990, 2130,
+    2250, 1870, 2040, 2100, 1960, 2080, 2020,
+    1940, 2160, 2110, 2000, 1980, 2070, 2190,
+    1930, 2050
+  ];
+
+  const burned = [
+    2480, 2390, 2510, 2430, 2460, 2550, 2420,
+    2370, 2500, 2450, 2530, 2410, 2480, 2560,
+    2440, 2380, 2470, 2520, 2390, 2490, 2450,
+    2510, 2430, 2470, 2390, 2460, 2500, 2420,
+    2380, 2450
+  ];
+
+  const weight = [
+    189.0, 188.8, 188.7, 188.5, 188.6, 188.4, 188.2,
+    188.1, 188.0, 187.9, 187.7, 187.8, 187.6, 187.5,
+    187.4, 187.3, 187.4, 187.2, 187.1, 187.0, 186.9,
+    187.0, 186.8, 186.7, 186.9, 186.8, 186.7, 186.6,
+    186.8, 186.8
+  ];
+
+  const net = burned.map((b, i) => b - intake[i]);
+
+  // ── Summary stats ─────────────────────────────────────────────────────────
+  const avg = arr => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+  document.getElementById('avgIntake').textContent    = avg(intake).toLocaleString();
+  document.getElementById('avgBurn').textContent      = avg(burned).toLocaleString();
+  document.getElementById('avgDeficit').textContent   = '+' + avg(net).toLocaleString();
+  document.getElementById('startWeight').textContent  = weight[0].toFixed(1);
+  document.getElementById('endWeight').textContent    = weight[weight.length - 1].toFixed(1);
+  const wChange = (weight[weight.length - 1] - weight[0]).toFixed(1);
+  document.getElementById('weightChange').textContent = wChange;
+
+  // ── Chart defaults ────────────────────────────────────────────────────────
+  Chart.defaults.color = '#8b8fad';
+  Chart.defaults.font.family = 'Inter';
+  Chart.defaults.font.size = 11.5;
+
+  const gridOpts = {
+    color: 'rgba(255,255,255,0.04)',
+    drawBorder: false
+  };
+
+  // ── Calorie Chart ─────────────────────────────────────────────────────────
+  new Chart(document.getElementById('calorieChart'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [
+        {
+          label: 'Intake',
+          data: intake,
+          borderColor: '#4da6ff',
+          backgroundColor: 'rgba(77,166,255,0.08)',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#4da6ff',
+          tension: 0.35,
+          fill: false
+        },
+        {
+          label: 'Burned',
+          data: burned,
+          borderColor: '#ff7c43',
+          backgroundColor: 'rgba(255,124,67,0.08)',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#ff7c43',
+          tension: 0.35,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3350',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} kcal`
+          }
+        }
+      },
+      scales: {
+        x: { grid: gridOpts, ticks: { maxTicksLimit: 10 } },
+        y: {
+          grid: gridOpts,
+          ticks: { callback: v => v.toLocaleString() },
+          min: 1700,
+          max: 2700
+        }
+      }
+    }
+  });
+
+  // ── Weight Chart ──────────────────────────────────────────────────────────
+  new Chart(document.getElementById('weightChart'), {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Weight',
+        data: weight,
+        borderColor: '#6c63ff',
+        backgroundColor: 'rgba(108,99,255,0.12)',
+        borderWidth: 2.5,
+        pointRadius: 3.5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#6c63ff',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3350',
+          borderWidth: 1,
+          padding: 10,
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y.toFixed(1)} lbs`
+          }
+        }
+      },
+      scales: {
+        x: { grid: gridOpts, ticks: { maxTicksLimit: 8 } },
+        y: {
+          grid: gridOpts,
+          ticks: { callback: v => `${v} lbs` },
+          min: 185.5,
+          max: 190
+        }
+      }
+    }
+  });
+
+  // ── Net Deficit Bar Chart ─────────────────────────────────────────────────
+  new Chart(document.getElementById('netChart'), {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{
+        label: 'Net (burned − intake)',
+        data: net,
+        backgroundColor: net.map(v => v >= 0 ? 'rgba(67,217,143,0.7)' : 'rgba(255,85,85,0.7)'),
+        borderRadius: 4,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3350',
+          borderWidth: 1,
+          padding: 10,
+          callbacks: {
+            label: ctx => ` Net: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y} kcal`
+          }
+        }
+      },
+      scales: {
+        x: { grid: gridOpts, ticks: { maxTicksLimit: 8 } },
+        y: {
+          grid: gridOpts,
+          ticks: { callback: v => (v > 0 ? '+' : '') + v }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
